@@ -129,7 +129,9 @@ if __name__ == "__main__":
     #-------------------------------#
     Use_Data_Loader = True
 
-    annotation_path = 'road_train.txt'
+    # annotation_path = 'road_train.txt'
+    annotation_path = '../faster-rcnn-pytorch/train_road_faster_rcnn/faster_rcnn_road_sample.txt'
+
     #-------------------------------#
     #   获得先验框和类
     #-------------------------------#
