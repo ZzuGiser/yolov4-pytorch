@@ -3,6 +3,7 @@
 #-------------------------------------#
 import os
 import numpy as np
+import pandas as pd
 import time
 import torch
 from torch.autograd import Variable
@@ -15,6 +16,8 @@ from utils.dataloader import yolo_dataset_collate, YoloDataset
 from nets.yolo_training import YOLOLoss,Generator
 from nets.yolo4 import YoloBody
 from tqdm import tqdm
+
+DATA_LOSS = []
 
 #---------------------------------------------------#
 #   获得类和先验框
@@ -104,6 +107,7 @@ def fit_one_epoch(net,yolo_losses,epoch,epoch_size,epoch_size_val,gen,genval,Epo
 
     print('Saving state, iter:', str(epoch+1))
     torch.save(model.state_dict(), 'logs/Epoch%d-Total_Loss%.4f-Val_Loss%.4f.pth'%((epoch+1),total_loss/(epoch_size+1),val_loss/(epoch_size_val+1)))
+    DATA_LOSS.append([float('%.4f' % (total_loss / (epoch_size + 1))), float('%.4f' % (val_loss / (epoch_size + 1)))])
 
 #----------------------------------------------------#
 #   检测精度mAP和pr曲线计算参考视频
@@ -242,7 +246,7 @@ if __name__ == "__main__":
             val_dataset = YoloDataset(lines[num_train:], (input_shape[0], input_shape[1]), mosaic=False)
             gen = DataLoader(train_dataset, shuffle=True, batch_size=Batch_size, num_workers=4, pin_memory=True,
                                     drop_last=True, collate_fn=yolo_dataset_collate)
-            gen_val = DataLoader(val_dataset, shuffle=True, batch_size=Batch_size, num_workers=4,pin_memory=True, 
+            gen_val = DataLoader(val_dataset, shuffle=True, batch_size=Batch_size, num_workers=4,pin_memory=True,
                                     drop_last=True, collate_fn=yolo_dataset_collate)
         else:
             gen = Generator(Batch_size, lines[:num_train],
@@ -261,3 +265,6 @@ if __name__ == "__main__":
         for epoch in range(Freeze_Epoch,Unfreeze_Epoch):
             fit_one_epoch(net,yolo_losses,epoch,epoch_size,epoch_size_val,gen,gen_val,Unfreeze_Epoch,Cuda)
             lr_scheduler.step()
+    loss_data_frame = pd.DataFrame(DATA_LOSS, columns=['total_loss', 'val_loss'])
+    loss_data_frame.to_csv('./logs/data_loss.csv')
+
